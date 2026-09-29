@@ -7,3 +7,6 @@ out/冰下的夏天_MV.mp4
 out/冰下的夏天_MV_1080p.mp4
 out/ambience.wav
 node_modules
+site/deliver/*.mp4
+out/mix.wav
+out/song48.wav

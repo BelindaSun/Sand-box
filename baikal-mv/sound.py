@@ -10,7 +10,7 @@ N = int(TOTAL * SR)
 L = np.zeros(N); R = np.zeros(N)
 rng = np.random.default_rng(7)
 
-def st(k, t=0.0): return shots[k]['start'] + t
+def st(k, t=0.0): return shots[k]['start'] + t / shots[k]['k']   # t 是镜头内（原速）时间
 def rng_(k): s = shots[k]; return s['start'], s['start'] + s['dur']
 def bp(x, lo, hi, o=2): return sosfilt(butter(o, [lo, hi], 'bandpass', fs=SR, output='sos'), x)
 def lp(x, f, o=2): return sosfilt(butter(o, f, 'lowpass', fs=SR, output='sos'), x)
@@ -110,7 +110,7 @@ wind(st('11'), st('12', 6), level=.9, seed=5)
 match(st('11', 1.6)); match(st('11', 3.4)); match(st('11', 5.6), ok=True)
 crackle(st('11', 5.8), st('12', 6))
 lapping(st('13'), st('13', 5), .8)
-engine(st('14'), st('14', 6), ([0, 2.2, 4.3, 6], [.9, .15, .15, 1]))
+engine(st('14'), st('14', 6), ([x / shots['14']['k'] for x in (0, 2.2, 4.3, 6)], [.9, .15, .15, 1]))
 add(st('14', 2.5), bp(noise(.2), 300, 3000) * .15)  # 开门
 lapping(st('15'), st('16', 5), 1.1, seed=6); splash(st('15', 3.1)); splash(st('15', 4.6), .5)
 wind(st('16'), st('16', 2.2), level=.5, fade=.3)
@@ -125,11 +125,11 @@ wind(*rng_('23'), level=1, seed=11); iceboom(st('23', 2.5), 1.3, -.3)
 wind(st('24', 1), st('24', 7), level=1.2, bright=2000, seed=12); lapping(st('24'), st('24', 7), .7)
 wind(*rng_('25'), level=1.2, seed=13)
 wind(*rng_('26'), level=.5, bright=1500, seed=14); lapping(st('26'), st('26', 10), .5)
-s27 = st('27'); subs = [4, 4, 5, 3, 3, 3, 4, 4]; acc = 0
+s27 = st('27'); subs = [x / shots['27']['k'] for x in (4, 4, 5, 3, 3, 3, 4, 4)]; acc = 0
 for i, d in enumerate(subs):
     a = s27 + acc
     if i in (0, 3, 6): wind(a, a + d, level=.9, fade=.3, seed=20 + i)
-    if i in (1,): engine(a, a + d, ([0, 2.5, 4], [.1, .1, .3]), .8)
+    if i in (1,): engine(a, a + d, ([0, 2.5 * d / 4, d], [.1, .1, .3]), .8)
     if i in (4, 7): engine(a, a + d, ([0, d], [.8, .6]), .5 if i == 4 else .25)
     if i in (2, 5): clack(a, a + d, period=.75, level=.6)
     acc += d

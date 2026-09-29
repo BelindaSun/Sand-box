@@ -44,7 +44,7 @@ function initGrain() {
   }
 }
 function grain(ctx, w, h, t, amt) {
-  const f = Math.floor(t * 24);
+  const f = Math.floor((typeof RT === 'number' ? RT : t) * 24);
   const c = GRAIN[f % GRAIN.length];
   ctx.save();
   ctx.globalCompositeOperation = 'overlay';
@@ -91,7 +91,8 @@ function film(ctx, t, seed, draw, o = {}) {
   ctx.globalCompositeOperation = 'screen';
   ctx.fillStyle = 'rgba(45,28,18,0.35)'; ctx.fillRect(-10, -10, FILM_W + 20, H + 20);
   // 曝光闪烁
-  const fl = (rand(Math.floor(t * 24) + seed) - .5) * .06;
+  const ft = typeof RT === 'number' ? RT : t;
+  const fl = (rand(Math.floor(ft * 24) + seed) - .5) * .06;
   ctx.fillStyle = fl > 0 ? `rgba(255,235,210,${fl})` : `rgba(0,0,0,0)`;
   ctx.fillRect(-10, -10, FILM_W + 20, H + 20);
   ctx.globalCompositeOperation = 'source-over';
@@ -99,7 +100,7 @@ function film(ctx, t, seed, draw, o = {}) {
   vignette(ctx, FILM_W, H, o.vig ?? .55, [20, 8, 0]);
   grain(ctx, FILM_W, H, t, o.grain ?? .22);
   // 灰尘与划痕
-  const f = Math.floor(t * 24);
+  const f = Math.floor(ft * 24);
   ctx.fillStyle = 'rgba(20,10,5,0.7)';
   for (let i = 0; i < 3; i++) if (rand(f * 3 + i) > .6) {
     ctx.beginPath(); ctx.arc(rand(f + i * 7) * FILM_W, rand(f + i * 11) * H, 1 + rand(f + i) * 2.5, 0, 7); ctx.fill();

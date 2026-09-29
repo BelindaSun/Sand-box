@@ -437,7 +437,7 @@ function profile(g, x, y, s, col) {
   g.fillStyle = col; g.beginPath(); curveThrough(g, PROFILE.map(([u, v]) => [x + u * s, y + v * s])); g.fill();
 }
 S('12 火光中的脸', 6, (c, t, d, p) => {
-  const fl = t > 3.8 && t < 3.8 + 8 / 24;
+  const fl = t > 3.8 && t < 4.35;
   if (fl) return film(c, t, 12, (g, w, h) => {
     vgrad(g, 0, 0, w, h, [[0, '#0d0a14'], [1, '#1d1210']]);
     fire(g, w * .66, h * .78, 110, t, { sparks: 24 });
@@ -916,19 +916,65 @@ S('30 浮冰间的月亮', 10, (c, t, d, p) => wide(c, t, (g, w, h) => {
 
 S('31 黑场', 6, (c, t) => { c.fillStyle = '#000'; c.fillRect(0, 0, W, H); });
 
-// ================= 时间线 =================
+// ================= 时间线：对齐网站用的《贝加尔湖畔》录音（4:05.8）=================
+// 视频时间 = 歌曲时间。锚点（Belinda 听出来的）：0:34 器乐奏出主歌旋律，0:48 开唱，1:35 / 2:58 两次副歌。
+// 其余按“每句约 3.9 秒”推算。stretch = 按比例变速（有动作编排的镜头）；extend = 原速延长（纯氛围镜头）。
+const TIMING = {
+  //      新时长  方式          对应
+  '01': [3, 'stretch'],     // 0:00 前奏
+  '02': [11, 'extend'],     // 0:03
+  '03': [8, 'stretch'],     // 0:14
+  '04': [7.5, 'stretch'],   // 0:22
+  '05': [4.5, 'stretch'],   // 0:29.5 → 0:34 器乐旋律进来，进入记忆
+  '06': [7, 'stretch'],     // 0:34
+  '07': [11, 'extend'],     // 0:41  0:48「在我的怀里 在你的眼里」← 车窗倒影里两张侧脸
+  '08': [7.8, 'stretch'],   // 0:52 「那里春风沉醉」
+  '09': [4.5, 'stretch'],   // 0:59.8「那里绿草如茵」
+  '10': [7.2, 'extend'],    // 1:04.3「月光把爱恋 洒满了湖面」← 他一个人
+  '11': [6, 'stretch'],     // 1:11.5「两个人的篝火」← 两次熄灭；1:15.2 点着 ←「照亮整个夜晚」
+  '12': [3.5, 'stretch'],   // 1:17.5 火光中的脸；1:19.7 闪回 ←「多少年以后」
+  '13': [3, 'stretch'],     // 1:21  「如云般游走」
+  '14': [4, 'stretch'],     // 1:24  她下了小巴 ←「那变换的脚步」
+  '15': [4, 'stretch'],     // 1:28  「让我们难牵手」← 她捧起湖水
+  '16': [3.5, 'stretch'],   // 1:32  冰上的手 / 水里的手
+  '17': [3.4, 'stretch'],   // 1:35.5 副歌「这一生一世」← 站台
+  '19': [5.6, 'stretch'],   // 1:38.9「有多少你我」← 两个影子
+  '20': [9.5, 'stretch'],   // 1:44.5「被吞没在月光如水的夜里」
+  '21': [8.5, 'stretch'],   // 1:54  「多想某一天 往日又重现」← 缝合拢前切断
+  '22': [9.5, 'stretch'],   // 2:02.5「我们流连忘返 在贝加尔湖畔」
+  '18': [6, 'extend'],      // 2:12  间奏：同一个站台
+  '23': [9, 'stretch'],     // 2:18  冰层轰鸣
+  '24': [8, 'stretch'],     // 2:27  她抬头
+  '25': [15, 'stretch'],    // 2:35  他系布条；2:42 主歌反复「那纷飞的冰雪…」← 大雪
+  '26': [8, 'stretch'],     // 2:50  她也系上一根
+  '27': [20, 'stretch'],    // 2:58  副歌二 ← 各自离开
+  '28': [14, 'extend'],     // 3:18  两根布条；3:24 左右碰到一起
+  '29': [16, 'extend'],     // 3:32  开湖（叠化在最后一句上）
+  '30': [12, 'extend'],     // 3:48  浮冰间的月亮，渐黑
+  '31': [7, 'extend'],      // 4:00  黑场，4:05.8 歌曲结束
+};
+// 第 18 镜挪到间奏开头（主歌二只有 16 秒，放不下）
+{ const i = SHOTS.findIndex(s => s.id.startsWith('18')), j = SHOTS.findIndex(s => s.id.startsWith('22'));
+  const [s18] = SHOTS.splice(i, 1); SHOTS.splice(j, 0, s18); }
+SHOTS.forEach(s => {
+  const [d, mode] = TIMING[s.id.slice(0, 2)];
+  s.dur0 = s.dur; s.dur = d; s.k = mode === 'extend' ? 1 : s.dur0 / d; s.dd = mode === 'extend' ? d : s.dur0;
+});
 const TOTAL = SHOTS.reduce((a, s) => a + s.dur, 0);
 const STARTS = []; { let a = 0; SHOTS.forEach(s => { STARTS.push(a); a += s.dur; }); }
+let RT = 0;
 function shotAt(T) { let i = SHOTS.length - 1; while (i > 0 && T < STARTS[i]) i--; return SHOTS[i]; }
+function drawShot(ctx, s, t) { s.draw(ctx, t * s.k, s.dd, clamp(t / s.dur)); }
 function render(ctx, T) {
+  RT = T;
   let i = SHOTS.length - 1; while (i > 0 && T < STARTS[i]) i--;
   const s = SHOTS[i], t = T - STARTS[i];
   ctx.save(); ctx.globalAlpha = 1; ctx.globalCompositeOperation = 'source-over';
-  s.draw(ctx, t, s.dur, clamp(t / s.dur));
+  drawShot(ctx, s, t);
   ctx.restore();
   if (s.xin && t < s.xin && i > 0) {
     const pv = SHOTS[i - 1], B = buf(), g = B.getContext('2d');
-    g.save(); pv.draw(g, pv.dur + t, pv.dur, 1); g.restore();
+    g.save(); drawShot(g, pv, pv.dur + t); g.restore();
     ctx.save(); ctx.globalAlpha = 1 - t / s.xin; ctx.drawImage(B, 0, 0); ctx.restore();
   }
   if (s.fin && t < s.fin) { ctx.fillStyle = rgba(s.finCol || [0, 0, 0], 1 - t / s.fin); ctx.fillRect(0, 0, W, H); }
