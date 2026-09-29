@@ -37,15 +37,13 @@ def wind(t0, t1, level=1.0, bright=900, fade=1.5, seed=1):
     w *= env(len(w), fade, fade)
     add(t0, w, 0.05 * level, pan=-0.2); add(t0, bp(noise(d), 150, bright) * env(len(w), fade, fade) * slow(d, .5, seed + 5), 0.035 * level, pan=0.3)
 
-# ---- 贝加尔湖冰层的声音：低沉的“咚”+ 向下滑的啸音 ----
+# ---- 冰层：只留一声低沉的闷响（不要下滑的“咻”声，太俏皮）----
 def iceboom(t0, g=1.0, pan=0.0):
-    d = 3.0; tt = np.arange(int(d * SR)) / SR
-    thump = lp(noise(d), 90, 4) * np.exp(-tt * 2.2) * 6
-    f = 1400 * np.exp(-tt * 5) + 180
-    chirp = np.sin(2 * np.pi * np.cumsum(f) / SR) * np.exp(-tt * 3.5) * 0.5
-    ring = np.sin(2 * np.pi * 55 * tt) * np.exp(-tt * 1.4) * 0.6
-    add(t0, (thump + chirp + ring) * 0.22 * g, 1, pan)
-    add(t0 + 0.09, chirp * 0.08 * g, 1, -pan)
+    d = 4.0; tt = np.arange(int(d * SR)) / SR
+    thump = lp(noise(d), 70, 4) * np.exp(-tt * 1.6) * 6
+    rumble = bp(noise(d), 40, 160) * np.exp(-tt * 0.9) * 1.2
+    att = np.minimum(1, tt / 0.04)
+    add(t0, (thump + rumble) * att * 0.22 * g, 1, pan)
 
 # ---- 火柴、篝火 ----
 def match(t0, ok=False):
@@ -99,7 +97,7 @@ def engine(t0, t1, profile, level=1.0):
     add(t0, lp(x, 600) * (0.2 + a) * 0.1 * level, 1, 0.1)
 
 # ================= 时间线 =================
-iceboom(1.0, 1.2); iceboom(2.5, .35, .5)
+iceboom(1.0, 1.0)
 wind(*rng_('02'), level=.9); wind(st('03'), st('05', 1), level=1.3, seed=2)
 for i in range(4):  # 手套擦雪
     t0 = st('04', .1 + i * .95); d = .8; tt = np.arange(int(d * SR)) / SR
@@ -138,7 +136,7 @@ lapping(st('29'), st('30', 10), .8, seed=31)
 for k in range(9):  # 浮冰轻碰
     t0 = st('29', 1.5 + k * 2.3 + rng.random()); d = .5; tt = np.arange(int(d * SR)) / SR
     add(t0, (np.sin(2 * np.pi * (900 + rng.random() * 600) * tt) * .3 + bp(noise(d), 800, 3000)) * np.exp(-tt * 12) * .05, 1, rng.random() - .5)
-whistle(st('31', .8), 4.0, .7)
+# 结尾不加声音：歌唱完就是安静
 
 mix = np.stack([L, R], 1)
 mix = mix / (np.abs(mix).max() + 1e-9) * 0.35   # 峰值约 -9 dBFS，给歌留出空间
