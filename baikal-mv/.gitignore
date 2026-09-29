@@ -1,0 +1,9 @@
+frames/
+out/*.part*
+out/*.list
+out/render.log
+out/video_silent.mp4
+out/冰下的夏天_MV.mp4
+out/冰下的夏天_MV_1080p.mp4
+out/ambience.wav
+node_modules

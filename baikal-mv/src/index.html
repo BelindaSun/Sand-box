@@ -1,0 +1,22 @@
+<!doctype html><html><head><meta charset="utf-8"><title>冰下的夏天</title>
+<style>html,body{margin:0;background:#000}canvas{display:block}</style></head>
+<body><canvas id="c" width="1920" height="1080"></canvas>
+<script src="lib.js"></script><script src="shots.js"></script>
+<script>
+const cv = document.getElementById('c'), cx = cv.getContext('2d');
+initGrain(); initIceTop(); initSnowTex();
+window.renderAt = T => render(cx, T);
+window.frameJPEG = (T, q = .92) => { render(cx, T); return cv.toDataURL('image/jpeg', q); };
+window.sheet = (times, cols = 4, sw = 480) => {
+  const sh = sw * 9 / 16, rows = Math.ceil(times.length / cols);
+  const s = document.createElement('canvas'); s.width = cols * sw; s.height = rows * sh;
+  const g = s.getContext('2d'); g.fillStyle = '#222'; g.fillRect(0, 0, s.width, s.height);
+  times.forEach((T, i) => {
+    render(cx, T); const x = (i % cols) * sw, y = Math.floor(i / cols) * sh;
+    g.drawImage(cv, x, y, sw, sh);
+    g.fillStyle = '#ff0'; g.font = '16px monospace'; g.fillText(T.toFixed(1) + ' ' + shotAt(T).id, x + 6, y + 18);
+  });
+  return s.toDataURL('image/jpeg', .85);
+};
+window.ready = true;
+</script></body></html>
